@@ -1,0 +1,134 @@
+﻿
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>layui</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="~/layuimini/lib/layui-v2.6.3/css/layui.css" media="all">
+    <link rel="stylesheet" href="~/layuimini/css/public.css" media="all">
+    <style>
+        body {
+            background-color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+    <div class="layui-form layuimini-form" lay-filter="formTest">
+        
+    <div class="layui-form-item" style="display:none">
+        <label class="layui-form-label required">部门ID</label>
+        <div class="layui-input-block">
+            <input type="text" name="id" lay-verify="required" value="" class="layui-input">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label required">部门名称</label>
+        <div class="layui-input-block">
+            <input type="text" name="departmentName" lay-verify="required" lay-reqtext="部门名称不能为空" placeholder="请输入部门名称" value="" class="layui-input">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">主管</label>
+        <div class="layui-input-block">
+            <select id="leaderSelect" name="leaderId">
+                    <option value=""></option>
+                </select>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">父部门</label>
+        <div class="layui-input-block">
+            <select id="parentSelect" name="parentId">
+                    <option value=""></option>
+            </select>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label ">描述</label>
+        <div class="layui-input-block">
+            <input type="text" name="description" placeholder="请输入描述" value="" class="layui-input">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-input-block">
+            <button class="layui-btn layui-btn-normal" lay-submit lay-filter="saveBtn">确认添加</button>
+        </div>
+    </div>
+</div>
+<script src="~/layuimini/lib/layui-v2.6.3/layui.js" charset="utf-8"></script>
+<script>
+    layui.use(['form','table'], function () {
+        var form = layui.form,
+            layer = layui.layer,
+            table=layui.table,
+            $ = layui.$;
+
+            console.log(window.location.search);
+            //截取部门编号
+            var id=window.location.search.substr(4);
+        $.ajax({
+                url:'/DepartmentInfo/GetDepartmentInfo',
+                type:'get',
+                data:{
+                    id:id
+                },
+                success:function(res){
+                    if(res.status==1){
+                        var departmentOptions = res.datas.departmentOptions;
+
+                        var userOptions = res.datas.userInfoOptions;
+
+                        for(var i=0;i<departmentOptions.length;i++){
+                            $('#parentSelect').append('<option value="'+departmentOptions[i].value+ '">'+departmentOptions[i].title+'</option>');
+                        }
+
+                        for(var i=0;i<userOptions.length;i++){
+                            $('#leaderSelect').append('<option value="'+userOptions[i].value+ '">'+userOptions[i].title+'</option>');
+                        }
+
+                        form.val("formTest",{
+                            "id":res.datas.departmentInfo.id,
+                            "departmentName":res.datas.departmentInfo.departmentName,
+                            "leaderId":res.datas.departmentInfo.leaderId,
+                            "parentId":res.datas.departmentInfo.parentId,
+                            "description":res.datas.departmentInfo.description
+                        });
+                    }
+                    else{
+                        layer.msg(res.msg);
+                    }
+                    
+                }
+            
+            });
+
+        //监听提交
+        form.on('submit(saveBtn)', function (data) {
+            $.ajax({
+                url:'/DepartmentInfo/UpdateDepartmentInfo',
+                type:'post',
+                data:data.field,
+                success:function(res){
+                    if(res.status==1){
+                       parent.reloadTalbe();
+                       var iframeIndex = parent.layer.getFrameIndex(window.name);
+                       parent.layer.close(iframeIndex);
+                       parent.layer.msg(res.msg);
+                    }else{
+                        layer.log(res.msg)
+                    }
+                }
+            });
+            return false;
+        });
+
+    });
+</script>
+</body>
+</html>

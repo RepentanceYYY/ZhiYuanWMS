@@ -1,0 +1,216 @@
+﻿
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>layui</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="~/layuimini/lib/layui-v2.6.3/css/layui.css" media="all">
+    <link rel="stylesheet" href="~/layuimini/css/public.css" media="all">
+</head>
+<body>
+    <div class="layuimini-container">
+        <div class="layuimini-main">
+
+            <fieldset class="table-search-fieldset">
+                <legend>搜索信息</legend>
+                <div style="margin: 10px 10px 10px 10px">
+                    <form class="layui-form layui-form-pane" action="">
+                        <div class="layui-form-item">
+                            <div class="layui-inline">
+                                <label class="layui-form-label">申请人姓名</label>
+                                <div class="layui-input-inline">
+                                    <input type="text" name="title" autocomplete="off" class="layui-input">
+                                </div>
+                            </div>
+                            <div class="layui-inline">
+                                <button type="submit" class="layui-btn layui-btn-primary" lay-submit lay-filter="data-search-btn"><i class="layui-icon"></i> 搜 索</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </fieldset>
+
+            @*<script type="text/html" id="toolbarDemo">
+                <div class="layui-btn-container">
+                    <button class="layui-btn layui-btn-normal layui-btn-sm data-add-btn" lay-event="add"> 添加 </button>
+                    <button class="layui-btn layui-btn-sm layui-btn-danger data-delete-btn" lay-event="delete"> 删除 </button>
+                </div>
+            </script>*@
+
+            <table class="layui-hide" id="currentTableId" lay-filter="currentTableFilter"></table>
+
+            <script type="text/html" id="currentTableBar">
+           {{#  if(d.reviewStatus =='审核中'){ }}
+                  <a class="layui-btn layui-btn-normal layui-btn-xs data-count-edit" lay-event="edit">审核</a>
+                {{#  } else { }}
+                  <a class="layui-btn layui-btn-xs layui-btn-disabled">审核</a>
+                {{#  } }}
+                
+                @*<a class="layui-btn layui-btn-xs layui-btn-danger data-count-delete" lay-event="delete">删除</a>*@
+            </script>
+
+        </div>
+    </div>
+    <script src="~/layuimini/lib/layui-v2.6.3/layui.js" charset="utf-8"></script>
+    <script>
+        var table;
+        //定义全局方法用于刷新主页table
+        function reloadTalbe(){
+            table.reload('currentTableId', {
+                    page: {
+                        curr: 1
+                    }
+                }, 'data');
+        }
+    layui.use(['form', 'table'], function () {
+            var $ = layui.jquery,
+                form = layui.form;
+                table = layui.table;
+
+           var backtracks= table.render({
+                elem: '#currentTableId',
+               url: '/WorkFlow_InstanceStep/GetWorkFlow_InstanceSteps',
+                toolbar: '#toolbarDemo',
+                defaultToolbar: ['filter', 'exports', 'print', {
+                    title: '提示',
+                    layEvent: 'LAYTABLE_TIPS',
+                    icon: 'layui-icon-tips'
+                }],
+                cols: [[
+                    { type: "checkbox", width: 50 },
+                    { field: 'id', width: 80, title: '主键ID', sort: true,hide:true },
+                    { field: 'modelName', minwidth: 80, title: '模板名字' },
+                    { field: 'creatorName', minwidth: 80, title: '申请人名字' },
+                    { field: 'outNum', minwidth: 80, title: '申请数量' },
+                    { field: 'outGoodsName', minwidth: 80, title: '申请物品' },
+                    { field: 'reviewerName', minwidth: 80, title: '审核人名字' },                    
+                    { field: 'reviewStatus', minwidth: 80, title: '审核状态' },
+                    { field: 'reviewTime', minwidth: 80, title: '审核时间' },
+                    { field: 'createTime', minwidth: 80, title: '添加时间' },                 
+                    { title: '操作', minWidth: 150, toolbar: '#currentTableBar', align: "center" }
+                ]],
+                limits: [10, 15, 20, 25, 50, 100],
+                limit: 10,
+                page: true,
+                skin: 'line'
+            });
+
+            // 监听搜索操作
+            form.on('submit(data-search-btn)', function (data) {
+                //var result = JSON.stringify(data.field);
+                //layer.alert(result, {
+                //    title: '最终的搜索信息'
+                //});
+
+                //执行搜索重载
+                table.reload('currentTableId', {
+                    page: {
+                        curr: 1
+                    }
+                    , where: {
+                        creatorName: data.field.creatorName
+                    }
+                }, 'data');
+
+                return false;
+            });
+
+            /**
+             * toolbar监听事件
+             */
+            table.on('toolbar(currentTableFilter)', function (obj) {
+                if (obj.event === 'add') {  // 监听添加操作
+                    var index = layer.open({
+                        title: '添加工作流模板',
+                        type: 2,
+                        shade: 0.2,
+                        maxmin: true,
+                        shadeClose: true,
+                        area: ['100%', '100%'],
+                        content: '/WorkFlow_Model/CreateWorkFlow_ModelView',
+                        end:function(){
+                            //关闭页面后取消window的resize事件
+                            $(window).off("resize");
+                        }
+                    });
+                    //$(window).on("resize", function () {
+                    //    layer.full(index);
+                    //});
+                } else if (obj.event === 'delete') {  // 监听删除操作
+                    var checkStatus = table.checkStatus('currentTableId')
+                        , data = checkStatus.data;
+
+                         //拿到已选中的id
+                    var ids=[];
+                    for(var i=0;i<data.length;i++){
+                        ids.push(data[i].id);
+                    }
+                    //发起异步请求
+                    $.ajax({
+                        url:'/WorkFlow_Model/DeleteWorkFlow_Models',
+                        type:'post',
+                        data:{
+                            ids:ids
+                        },
+                        success:function(res){
+                            layer.msg(res.msg);
+                            reloadTalbe();
+                        }
+                    });              
+                }
+            });
+
+            //监听表格复选框选择
+            table.on('checkbox(currentTableFilter)', function (obj) {
+                console.log(obj)
+            });
+
+            table.on('tool(currentTableFilter)', function (obj) {
+                var data = obj.data;
+                if (obj.event === 'edit') {
+
+                    var index = layer.open({
+                        title: '进行审批',
+                        type: 2,
+                        shade: 0.2,
+                        maxmin: true,
+                        shadeClose: true,
+                        area: ['100%', '100%'],
+                        content: '/WorkFlow_InstanceStep/UpdateWorkFlow_InstanceStepView?id='+data.id,
+                        end:function(){
+                            $(window).off("resize");
+                        }
+                    });
+                    return false;
+                } else if (obj.event === 'delete') {
+                    layer.confirm('真的删除行么', function (index) {
+                        console.log(data.id);
+                        $.ajax({
+                            url: '/WorkFlow_Model/DeleteWorkFlow_Model',
+                        type: 'get',
+                        data: { id: data.id },
+                        success: function (res) {
+                            if (res.IsSuccess) {
+                                layer.msg(res.msg);
+                                backtracks.reload();
+                            } else {
+                                layer.msg(res.msg);
+                            }
+                        }
+                    });
+                        obj.del();
+                        layer.close(index);
+                    });
+                }
+            });
+
+        });</script>
+
+</body>
+</html>

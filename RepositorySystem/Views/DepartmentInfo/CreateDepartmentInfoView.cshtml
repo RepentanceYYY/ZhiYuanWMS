@@ -1,0 +1,127 @@
+﻿
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>layui</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="~/layuimini/lib/layui-v2.6.3/css/layui.css" media="all">
+    <link rel="stylesheet" href="~/layuimini/css/public.css" media="all">
+    <style>
+        body {
+            background-color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+<div class="layui-form layuimini-form">
+    
+    <div class="layui-form-item">
+        <label class="layui-form-label required">部门名称</label>
+        <div class="layui-input-block">
+            <input type="text" name="departmentName" lay-verify="required" lay-reqtext="部门名称不能为空" placeholder="请输入部门名称" value="" class="layui-input">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">主管</label>
+        <div class="layui-input-block">
+            <select id="leaderSelect" name="leaderId">
+                    <option value=""></option>
+                </select>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">父部门</label>
+        <div class="layui-input-block">
+            <select id="parentSelect" name="parentId">
+                    <option value=""></option>
+            </select>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label ">描述</label>
+        <div class="layui-input-block">
+            <input type="text" name="description" placeholder="请输入描述" value="" class="layui-input">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-input-block">
+            <button class="layui-btn layui-btn-normal" lay-submit lay-filter="saveBtn">确认添加</button>
+        </div>
+    </div>
+</div>
+<script src="~/layuimini/lib/layui-v2.6.3/layui.js" charset="utf-8"></script>
+<script>
+    layui.use(['form'], function () {
+        var form = layui.form,
+            layer = layui.layer,
+            $ = layui.$;
+
+        //发起异步请求获取部门和领导下拉选数据
+        $.ajax({
+            url:'/DepartmentInfo/GetOptions',
+            type:'get',
+            data:{},
+            success:function(res){
+
+                var departmentOptions = res.datas.departmentOptions;
+
+                var userOptions = res.datas.userOptions;
+
+                for(var i=0;i<departmentOptions.length;i++){
+                    $('#parentSelect').append('<option value="'+departmentOptions[i].value+ '">'+departmentOptions[i].title+'</option>');
+                }
+
+                for(var i=0;i<userOptions.length;i++){
+                    $('#leaderSelect').append('<option value="'+userOptions[i].value+ '">'+userOptions[i].title+'</option>');
+                }
+
+                form.render('select'); //渲染 select 选择框
+            }
+        });
+
+        //监听提交
+        form.on('submit(saveBtn)', function (data) {
+
+            $.ajax({
+                url:'/DepartmentInfo/CreateDepartmentInfo',
+                type:'post',
+                data:data.field,
+                success:function(res){
+                    console.log(res);
+                    if(res.status==1){
+                        parent.reloadTalbe();
+                        var iframeIndex = parent.layer.getFrameIndex(window.name);
+                        parent.layer.close(iframeIndex);
+                        parent.layer.msg(res.msg);
+                    }else{
+                        layer.msg(res.msg);
+                    }
+                }
+            });
+            //console.log(data.field);
+            //var index = layer.alert(JSON.stringify(data.field), {
+            //    title: '最终的提交信息'
+            //}, 
+            //function () {
+
+            //    // 关闭弹出层
+            //    layer.close(index);
+
+            //    var iframeIndex = parent.layer.getFrameIndex(window.name);
+            //    parent.layer.close(iframeIndex);
+
+            //});
+
+            return false;
+        });
+
+    });
+</script>
+</body>
+</html>

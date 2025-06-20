@@ -1,0 +1,90 @@
+﻿@{
+    Layout= null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>layui</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="~/layuimini/lib/layui-v2.6.3/css/layui.css" media="all">
+    <link rel="stylesheet" href="~/layuimini/css/public.css" media="all">
+    <style>
+        body {
+            background-color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+ 
+        <div id="test4" class="demo-transfer"></div>
+        <button class="layui-btn layui-btn-primary layui-btn-sm layui-border-blue" id="bindMenu" 
+        style="margin-top: 20px;margin-left: 200px;">确定绑定</button>
+
+
+<script src="~/layuimini/lib/layui-v2.6.3/layui.js" charset="utf-8"></script>
+<script>
+    
+    layui.use(['form','transfer'], function () {
+        var form = layui.form,
+            layer = layui.layer,
+            transfer=layui.transfer,
+            table = layui.table,
+            $ = layui.$;
+            
+            //获取url上的id
+            var roleId =window.location.search.substr(4);
+
+            //发起异步请求获取菜单选项
+            $.ajax({
+                url:'/RoleInfo/GetBindMenuOptions',
+                type:'get',
+                data:{
+                    roleId:roleId
+                },
+                success:function(res){
+                    console.log(res.datas.options)
+                    console.log(res.datas.bindMenuIds)
+                    //显示搜索框
+                      transfer.render({
+                        elem: '#test4'
+                        ,data: res.datas.options
+                        ,title: ['备用菜单', '已选菜单']
+                        ,showSearch: true
+                        ,id:'demo1' //定义索引
+                        ,value:res.datas.bindMenuIds
+                      })
+                }
+            });//请求末尾
+
+        //监听提交
+        $('#bindMenu').click(function(){
+            //获取右侧数据
+            var getData = transfer.getData('demo1');
+
+            //定义数组装移动数据
+            var menuIds = [];
+            for(var i =0; i<getData.length;i++){
+                menuIds.push(getData[i].value)
+            }
+            //发起异步请求获取备用菜单数据
+            $.ajax({
+                url:'/RoleInfo/BindMenuInfo',
+                type:'post',
+                data:{
+                    roleId:roleId,
+                    menuIds:menuIds
+                },
+                success:function(res){
+                    layer.msg(res.msg);
+                }
+            });//请求末尾
+        });//点击末尾
+
+    });
+</script>
+</body>
+</html>

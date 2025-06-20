@@ -1,0 +1,89 @@
+﻿
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>layui</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="~/layuimini/lib/layui-v2.6.3/css/layui.css" media="all">
+    <link rel="stylesheet" href="~/layuimini/css/public.css" media="all">
+    <style>
+        body {
+            background-color: #ffffff;
+        }
+    </style>
+</head>
+
+<body>
+    <!--穿梭框的div-->
+    
+    <div id="test4" class="demo-transfer"></div>
+    <button class="layui-btn layui-btn-primary layui-border-orange" id="bindUser">绑定用户</button>
+
+<script src="~/layuimini/lib/layui-v2.6.3/layui.js" charset="utf-8"></script>
+<script>
+    layui.use(['form','transfer'], function () {
+        var form = layui.form,
+            transfer = layui.transfer,
+            layer = layui.layer,
+            $ = layui.$;        
+
+            //拿到url上面的参数id值
+            var roleId = window.location.search.substr(4);
+
+            //发起异步请求获取备选用户数据
+            $.ajax({
+                url:'/RoleInfo/GetBindUserOptions',
+                type:'get',
+                data:{
+                    roleId:roleId
+                },
+                success: function (res) {
+                    console.log(res);
+
+                    //显示搜索框
+                    transfer.render({
+                        elem: '#test4'
+                        , data: res.datas.options
+                        , title: ['备选用户', '已选用户']
+                        , showSearch: true
+                        , id: 'demo1' //定义索引
+                        , value: res.datas.bindUserIds
+                    })
+                    console.log(transfer.getData('demo1'))
+                }
+            });
+
+
+            //绑定按钮点击事件
+            $('#bindUser').click(function () {
+                //获得右侧数据
+                var getData = transfer.getData('demo1');
+
+                var userIds = [];
+                for (var i = 0; i < getData.length; i++) {
+                    userIds.push(getData[i].value)
+                }
+                //发起异步请求获取备选用户数据
+                $.ajax({
+                    url: '/RoleInfo/BindUserInfo',
+                    type: 'post',
+                    data: {
+                        roleId: roleId,
+                        userIds: userIds
+                    },
+                    success: function (res) {
+                        layer.msg(res.msg);
+                    }
+                });
+            });
+              
+    });
+</script>
+</body>
+</html>
